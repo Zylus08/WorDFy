@@ -8,6 +8,7 @@ from docx2pdf import convert
 import smtplib
 from email.message import EmailMessage
 import sqlite3
+from PyPDF2 import PdfReader, PdfWriter
 
 app = Flask(__name__)
 
@@ -47,6 +48,22 @@ def safe_convert(docx_path, pdf_path):
     finally:
         # Uninitialize COM library
         pythoncom.CoUninitialize()
+
+def compress_pdf(input_pdf_path, output_pdf_path, max_size_mb=25): 
+    reader = PdfReader(input_pdf_path) 
+    writer = PdfWriter() 
+    
+    # Add all pages to the writer 
+    for page in reader.pages: 
+        writer.add_page(page) 
+        
+    # Compress the file 
+    with open(output_pdf_path, 'wb') as output_pdf: 
+        writer.write(output_pdf) 
+        
+    # Check if the compressed file size is within the limit 
+    if os.path.getsize(output_pdf_path) > max_size_mb * 1024 * 1024: 
+        raise ValueError(f"Unable to compress PDF to {max_size_mb} MB")
 
 @app.route("/", methods=["GET", "POST"])
 def index():
